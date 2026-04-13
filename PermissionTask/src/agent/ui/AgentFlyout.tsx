@@ -8,12 +8,10 @@ import BottomSheet, {
 import { useAppStore } from "@/src/store/useAppStore";
 import { ChatTranscript } from "./ChatTranscript";
 import { Composer } from "./Composer";
-import { ProposedActionCard } from "./ProposedActionCard";
 
 export function AgentFlyout() {
   const snapPoints = useMemo(() => ["50%", "80%"], []);
   const open = useAppStore((state) => state.flyoutState.open);
-  const pendingCommand = useAppStore((state) => state.pendingCommand);
 
   const handleSnap = (index: number) => {
     if (index < 0 && open) {
@@ -44,9 +42,7 @@ export function AgentFlyout() {
       style={styles.bottomSheet}
       enableContentPanningGesture={false}
     >
-      <ChatTranscript
-        topContent={pendingCommand ? <ProposedActionCard /> : null}
-      />
+      <ChatTranscript />
     </BottomSheet>
   );
 }

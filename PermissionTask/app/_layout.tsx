@@ -12,6 +12,7 @@ import { StyleSheet, View } from "react-native";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AgentFlyout } from "@/src/agent/ui/AgentFlyout";
+import { ProposedActionCard } from "@/src/agent/ui/ProposedActionCard";
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -35,6 +36,7 @@ export default function RootLayout() {
           </SafeAreaView>
           <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
             <AgentFlyout />
+            <ProposedActionCard />
           </View>
         </View>
       </ThemeProvider>

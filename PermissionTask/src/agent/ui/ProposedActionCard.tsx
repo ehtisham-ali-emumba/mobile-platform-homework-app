@@ -22,58 +22,71 @@ export function ProposedActionCard() {
 
   const commandLabel =
     {
-      navigate: `Go to ${pendingCommand.payload.screen}`,
+      navigate: `Go to ${pendingCommand.payload?.screen}`,
       openFlyout: "Open agent",
       closeFlyout: "Close agent",
       applyExploreFilter: "Apply filter",
-      setPreference: `Turn ${pendingCommand.payload.value ? "on" : "off"} dark mode`,
+      setPreference: `Turn ${pendingCommand.payload?.value ? "on" : "off"} dark mode`,
       showAlert: "Show alert",
       exportAuditLog: "Export audit log to file",
     }[pendingCommand.type] || "Confirm action";
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Ionicons name="shield-checkmark-outline" size={20} color="#10b981" />
-        <Text style={styles.title}>Confirm Action</Text>
-      </View>
+    <View style={styles.backdrop}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Ionicons name="shield-checkmark-outline" size={20} color="#10b981" />
+          <Text style={styles.title}>Confirm Action</Text>
+        </View>
 
-      <Text style={styles.description}>{commandLabel}</Text>
+        <Text style={styles.description}>{commandLabel}</Text>
 
-      <View style={styles.buttonRow}>
-        <Pressable
-          style={[styles.button, styles.cancelButton]}
-          onPress={handleCancel}
-        >
-          <Ionicons name="close-outline" size={18} color="#ef4444" />
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.button, styles.confirmButton]}
-          onPress={handleConfirm}
-        >
-          <Ionicons name="checkmark-outline" size={18} color="#fff" />
-          <Text style={styles.confirmButtonText}>Confirm</Text>
-        </Pressable>
+        <View style={styles.buttonRow}>
+          <Pressable
+            style={[styles.button, styles.cancelButton]}
+            onPress={handleCancel}
+          >
+            <Ionicons name="close-outline" size={18} color="#ef4444" />
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.button, styles.confirmButton]}
+            onPress={handleConfirm}
+          >
+            <Ionicons name="checkmark-outline" size={18} color="#fff" />
+            <Text style={styles.confirmButtonText}>Confirm</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  backdrop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "flex-start",
+    paddingTop: 60,
+    paddingHorizontal: 16,
+    zIndex: 1000,
+  },
   container: {
     backgroundColor: "#f8fafc",
     borderRadius: 12,
     padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
     borderLeftWidth: 4,
     borderLeftColor: "#10b981",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 10,
+    zIndex: 1000,
   },
   header: {
     flexDirection: "row",

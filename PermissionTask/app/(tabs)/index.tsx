@@ -1,227 +1,214 @@
-import { Image } from "expo-image";
-import { useState } from "react";
-import {
-  Alert,
-  Button,
-  Platform,
-  StyleSheet,
-  ScrollView,
-  Text,
-} from "react-native";
+import { useMemo } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
-import { HelloWave } from "@/components/hello-wave";
-import ParallaxScrollView from "@/components/parallax-scroll-view";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { Link } from "expo-router";
-import { readLog, writeLog, clearLog } from "@/modules/file-module";
+import {
+  cancelPendingCommand,
+  confirmPendingCommand,
+  dispatch,
+} from "@/src/agent/router";
+import { useAppStore } from "@/src/store/useAppStore";
 
 export default function HomeScreen() {
-  const [logPath, setLogPath] = useState<string | null>(null);
-  const [logContents, setLogContents] = useState<string>("");
+  const activityLog = useAppStore((state) => state.activityLog);
+  const pendingCommand = useAppStore((state) => state.pendingCommand);
+
+  const lastFive = useMemo(
+    () => activityLog.slice(-5).reverse(),
+    [activityLog],
+  );
 
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
-        />
-      }
-    >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit{" "}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText>{" "}
-          to see changes. Press{" "}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: "cmd + d",
-              android: "cmd + m",
-              web: "F12",
-            })}
-          </ThemedText>{" "}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction
-              title="Action"
-              icon="cube"
-              onPress={() => alert("Action pressed")}
-            />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert("Share pressed")}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert("Delete pressed")}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Home</Text>
+      <Text style={styles.subtitle}>Phase 5 agent flyout ready</Text>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">
-            npm run reset-project
-          </ThemedText>{" "}
-          to get a fresh <ThemedText type="defaultSemiBold">app</ThemedText>{" "}
-          directory. This will move the current{" "}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{" "}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 4: Native Log Writer</ThemedText>
-        <ThemedText style={{ fontSize: 12, opacity: 0.7 }}>
-          Logs are appended with timestamps and separators.
-        </ThemedText>
+      <View style={styles.buttonGroup}>
+        <Pressable
+          style={[styles.actionButton, styles.actionAgent]}
+          onPress={() => dispatch({ type: "openFlyout", payload: {} })}
+        >
+          <Ionicons name="chatbubbles-outline" size={18} color="#fff" />
+          <Text style={styles.actionText}>Open Agent Chat</Text>
+        </Pressable>
+        <Pressable
+          style={styles.actionButton}
+          onPress={() =>
+            dispatch({ type: "navigate", payload: { screen: "explore" } })
+          }
+        >
+          <Ionicons name="navigate-outline" size={18} color="#fff" />
+          <Text style={styles.actionText}>Navigate to Explore</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.actionButton, styles.actionWarn]}
+          onPress={() => dispatch({ type: "nope" as never, payload: {} })}
+        >
+          <Ionicons name="alert-circle-outline" size={18} color="#fff" />
+          <Text style={styles.actionText}>Dispatch Invalid Command</Text>
+        </Pressable>
+        <Pressable
+          style={styles.actionButton}
+          onPress={() =>
+            dispatch({
+              type: "setPreference",
+              payload: { key: "darkMode", value: true },
+            })
+          }
+        >
+          <Ionicons name="moon-outline" size={18} color="#fff" />
+          <Text style={styles.actionText}>Enable Dark Mode (Confirm)</Text>
+        </Pressable>
+      </View>
 
-        <Button
-          title="Write to log"
-          onPress={async () => {
-            try {
-              const content = `Test log entry: ${Math.random().toString(36).substring(7)}`;
-              const path = await writeLog(content, "smoke.txt");
-              setLogPath(path);
-              // Auto-read after write
-              const contents = await readLog("smoke.txt");
-              setLogContents(contents);
-              Alert.alert("Log written ✓", path);
-            } catch (error) {
-              Alert.alert(
-                "Write failed",
-                error instanceof Error ? error.message : "Unknown error",
-              );
-            }
-          }}
-        />
+      {pendingCommand && (
+        <View style={styles.pendingCard}>
+          <Text style={styles.pendingTitle}>Pending confirmation</Text>
+          <Text style={styles.pendingText}>{pendingCommand.type}</Text>
+          <View style={styles.pendingActions}>
+            <Pressable
+              style={styles.smallConfirm}
+              onPress={() => confirmPendingCommand()}
+            >
+              <Text style={styles.smallButtonText}>Confirm</Text>
+            </Pressable>
+            <Pressable
+              style={styles.smallCancel}
+              onPress={() => cancelPendingCommand()}
+            >
+              <Text style={styles.smallButtonText}>Cancel</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
 
-        <Button
-          title="Refresh log view"
-          onPress={async () => {
-            try {
-              const contents = await readLog("smoke.txt");
-              setLogContents(contents);
-              Alert.alert("Log refreshed ✓");
-            } catch (error) {
-              Alert.alert(
-                "Read failed",
-                error instanceof Error ? error.message : "Unknown error",
-              );
-            }
-          }}
-        />
-
-        <Button
-          title="Clear log file (delete)"
-          onPress={async () => {
-            try {
-              await clearLog("smoke.txt");
-              setLogContents("");
-              setLogPath(null);
-              Alert.alert("Log file deleted ✓");
-            } catch (error) {
-              Alert.alert(
-                "Clear failed",
-                error instanceof Error ? error.message : "Unknown error",
-              );
-            }
-          }}
-        />
-
-        {logPath && (
-          <ThemedView style={styles.pathContainer}>
-            <ThemedText style={{ fontSize: 11, opacity: 0.6 }}>
-              📁 File: {logPath}
-            </ThemedText>
-          </ThemedView>
-        )}
-
-        {logContents ? (
-          <ThemedView style={styles.logContainer}>
-            <ThemedText type="subtitle" style={{ marginBottom: 8 }}>
-              📋 Log Output:
-            </ThemedText>
-            <ScrollView style={styles.logScroll} nestedScrollEnabled={true}>
-              <Text style={styles.logText}>{logContents}</Text>
-            </ScrollView>
-          </ThemedView>
-        ) : (
-          <ThemedText style={{ fontSize: 12, opacity: 0.5, marginTop: 8 }}>
-            No logs yet. Click &quot;Write to log&quot; to create entries.
-          </ThemedText>
-        )}
-      </ThemedView>
-    </ParallaxScrollView>
+      <Text style={styles.sectionTitle}>Recent activity</Text>
+      {lastFive.length === 0 ? (
+        <Text style={styles.emptyText}>No activity yet.</Text>
+      ) : (
+        lastFive.map((entry) => (
+          <View key={entry.id} style={styles.logRow}>
+            <View style={styles.logHeader}>
+              <Text style={styles.logPrimary}>{entry.commandType}</Text>
+              <View style={styles.statusPill}>
+                <Text style={styles.statusText}>{entry.status}</Text>
+              </View>
+            </View>
+            {entry.reason ? (
+              <Text style={styles.logSecondary}>{entry.reason}</Text>
+            ) : null}
+          </View>
+        ))
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    padding: 16,
+    gap: 12,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "700",
+  },
+  subtitle: {
+    fontSize: 14,
+    opacity: 0.7,
+  },
+  sectionTitle: {
+    marginTop: 8,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  buttonGroup: {
+    gap: 8,
+  },
+  actionButton: {
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: "#0284c7",
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  actionAgent: {
+    backgroundColor: "#7c3aed",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: "absolute",
+  actionWarn: {
+    backgroundColor: "#dc2626",
   },
-  pathContainer: {
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
-    padding: 8,
-    borderRadius: 4,
-    marginTop: 8,
+  actionText: {
+    color: "#fff",
+    fontWeight: "600",
   },
-  logContainer: {
-    marginTop: 12,
-    padding: 10,
-    backgroundColor: "rgba(0, 0, 0, 0.03)",
-    borderRadius: 6,
+  pendingCard: {
     borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.1)",
+    borderColor: "#f59e0b",
+    borderRadius: 12,
+    padding: 12,
+    gap: 8,
+    backgroundColor: "#fffbeb",
   },
-  logScroll: {
-    maxHeight: 300,
-    backgroundColor: "rgba(255, 255, 255, 0.5)",
-    borderRadius: 4,
-    padding: 8,
+  pendingTitle: {
+    fontWeight: "700",
   },
-  logText: {
-    fontFamily: Platform.select({ ios: "Courier", android: "monospace" }),
-    fontSize: 11,
-    lineHeight: 18,
-    color: "#333",
+  pendingText: {
+    fontSize: 13,
+  },
+  pendingActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  smallConfirm: {
+    backgroundColor: "#16a34a",
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  smallCancel: {
+    backgroundColor: "#475569",
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  smallButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  emptyText: {
+    opacity: 0.7,
+  },
+  logRow: {
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 10,
+    padding: 10,
+    backgroundColor: "#f8fafc",
+  },
+  logHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  logPrimary: {
+    fontWeight: "600",
+  },
+  logSecondary: {
+    marginTop: 2,
+    opacity: 0.7,
+  },
+  statusPill: {
+    backgroundColor: "#e2e8f0",
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "capitalize",
   },
 });

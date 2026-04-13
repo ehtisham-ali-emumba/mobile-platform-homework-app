@@ -41,3 +41,14 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Expo modules: native build artifacts and caches
+modules/*/android/build/
+modules/*/android/.gradle/
+modules/*/android/.kotlin/
+modules/*/android/.cxx/
+modules/*/android/.externalNativeBuild/
+modules/*/android/local.properties
+modules/*/ios/build/
+modules/*/ios/DerivedData/
+modules/*/.expo/

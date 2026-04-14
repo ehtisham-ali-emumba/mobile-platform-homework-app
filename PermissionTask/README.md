@@ -1,6 +1,6 @@
 # Mobile Platform Lead — Take-Home
 
-An anchored chat flyout drives three screens through one validated, auditable command router. Every state change goes through `dispatch()`; mutations confirm; every attempt is logged.
+Chat flyout drives three screens via one validated, auditable command router. Every state change goes through `dispatch()`; mutations confirm; every attempt is logged.
 
 ## Setup
 
@@ -30,7 +30,7 @@ export JAVA_HOME=$(/usr/libexec/java_home -v 17)
 
 ## Deep linking (stretch — not built)
 
-Not built in the 6h box. See [`artifacts/deep-linking.md`](./artifacts/deep-linking.md): three URLs from the brief, dispatched through the **same** Command Router so links inherit allowlist + zod + confirm + audit. iOS AASA + Android `autoVerify` App Links via `app.json`.
+Not built. See [`artifacts/deep-linking.md`](./artifacts/deep-linking.md): three URLs from the brief, dispatched through the **same** Command Router so links inherit allowlist + zod + confirm + audit. iOS AASA + Android `autoVerify` App Links via `app.json`.
 
 ## Key decisions
 
@@ -40,15 +40,14 @@ Not built in the 6h box. See [`artifacts/deep-linking.md`](./artifacts/deep-link
 - Zustand + `persist` over Redux — 40 lines; prefs survive reload.
 - Zod schemas colocated with the router — one source of truth for shape + validation.
 - Router owns every side effect — `src/agent/ui/**` never calls `setState` or `expo-router.navigate`.
-- Confirm-gated: `setPreference` (mandated) and `exportAuditLog` (touches the device).
-- `__tests__/router.test.ts` proves three `dispatch()` invariants: off-allowlist commands reject with `not-in-allowlist`, malformed payloads reject via zod, and `setPreference` parks as `pendingCommand` without mutating state until confirmation. Run with `npm test`.
+- `__tests__/router.test.ts` proves three `dispatch()` invariants: off-allowlist commands reject, malformed payloads reject via zod, and `setPreference` parks as `pendingCommand` without mutating state. Run with `npm test`.
 
 ## AI disclosure
 
 - **Tools:** Claude Code (Sonnet 4.6).
 - **Used for:** scaffolding, Zod typing, Swift + Kotlin bodies (reviewed line-by-line), test scaffolding.
-- **Workflow:** drafted the command contract, confirmation policy, and log shape first; Claude typed from that spec.
-- **Mine:** architecture, router semantics, stack tradeoffs, all written prose.
+- **Workflow:** drafted command contract + confirm policy + log shape first; Claude typed from that spec.
+- **Mine:** architecture, router semantics, stack tradeoffs, written prose.
 
 ## Demo script
 

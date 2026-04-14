@@ -1,50 +1,71 @@
-# Welcome to your Expo app 👋
+# Mobile Platform Lead — Take-Home
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+An anchored chat flyout drives three screens through a validated, auditable command router. State changes go through one `dispatch()`; mutations require confirmation; every attempt is logged.
 
-## Get started
+## Setup
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Prereqs: Node ≥ 20, npm ≥ 10, Xcode, Android Studio with JDK 17, a booted simulator or emulator.
 
 ```bash
-npm run reset-project
+npm install
+npx expo prebuild            # only if ios/ or android/ is missing
+npm run ios
+npm run android
+npm test
+
+# if iOS Pods stall:
+cd ios && pod install --repo-update && cd ..
+
+# if Android Gradle fails on JDK:
+export JAVA_HOME=$(/usr/libexec/java_home -v 17)
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Architecture (TL;DR)
 
-## Learn more
+- Expo (prebuild) + `expo-router` tabs. Flyout mounted in `app/_layout.tsx` inside `absoluteFillObject`, outside `<Stack>`, so it survives tab switches.
+- `src/agent/` owns every state mutation: `parser.ts` → `schemas.ts` → `router.ts` → Zustand + `FileModule`.
+- `dispatch()` = allowlist → zod → confirm gate → execute → log.
+- Six commands; `setPreference` and `exportAuditLog` are confirm-gated.
+- `FileModule` (Swift `FileManager` / Kotlin `java.io.File`) writes under `.documentDirectory` / `filesDir`. No `expo-file-system`.
+- `ProposedActionCard` reads `pendingCommand` and only calls `confirmPendingCommand` / `cancelPendingCommand`.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Key decisions
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- Expo with prebuild over bare RN — fastest path to iOS + Android + a custom native module.
+- `create-expo-module --local FileModule` — the native write is the module's reason to exist, not a shim.
+- Deterministic parser, not an LLM — no network dep on the 5-minute run gate; seam at `src/agent/parser.ts`.
+- Zustand + `persist` over Redux — 40 lines; prefs survive reload.
+- Zod schemas colocated with the router — one source of truth for shape + validation.
+- Router owns every side effect — `src/agent/ui/**` never calls `setState` or `expo-router.navigate`.
+- Two confirm-gated commands — `setPreference` mandated; `exportAuditLog` added because it touches the device.
+- Parser rules are intentionally dumb (~6 regex patterns) — correctness sits on the router.
+- `__tests__/router.test.ts` proves off-allowlist rejection, schema rejection, and that `setPreference` parks as `pending` without mutating state.
 
-## Join the community
+## AI disclosure
 
-Join our community of developers creating universal apps.
+- **Tools:** Claude Code (Sonnet 4.6).
+- **Used for:** scaffolding, Zod typing, Swift + Kotlin bodies (reviewed line-by-line), test scaffolding.
+- **Workflow:** drafted the command contract, confirmation policy, and log shape on paper first (`docs/APPROACH.md` — personal playbook, not a deliverable); Claude typed from that spec.
+- **Mine:** architecture, router semantics, stack tradeoffs, all written prose.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Demo script
+
+1. Cold start → Home. Flyout handle anchored at the bottom.
+2. Tap handle → "what can you do?" → transcript lists supported commands.
+3. "go to explore" → Explore opens; log row `executed`.
+4. "dark mode" → `ProposedActionCard` → Confirm → Profile toggle flips; log row `pending` → `executed`.
+5. "Dispatch Invalid Command" button → rejected row, reason `not-in-allowlist`.
+6. Profile → Activity Log shows executed / rejected / pending rows with timestamps.
+7. Profile → Export Audit Log → Confirm → native module writes JSON → alert shows absolute path.
+
+## Submission checklist
+
+- [x] Repo named `mobile-platform-homework-<first-last>`, default branch `main`
+- [x] README includes Setup commands for iOS + Android
+- [x] README word count ≤ 500 (excluding commands / checkboxes)
+- [x] `agent/CONTEXT.md` included
+- [x] `artifacts/decisions.md` included (≤ 400 words)
+- [x] `artifacts/architecture.md` included
+- [ ] `artifacts/demo-ios.mp4` and `artifacts/demo-android.mp4` included
+- [x] One meaningful test included and described
+- [x] AI disclosure included (tools + how + what was mine)

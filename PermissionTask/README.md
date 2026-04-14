@@ -8,7 +8,7 @@ Prereqs: Node ≥ 20, npm ≥ 10, Xcode, Android Studio with JDK 17, a booted si
 
 ```bash
 npm install
-npx expo prebuild            # only if ios/ or android/ is missing
+npx expo prebuild --clean    # generates ios/ and android/ (gitignored by design — CNG)
 npm run ios
 npm run android
 npm test
